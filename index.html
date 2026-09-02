@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html>
 <head>
+
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <title>Smart Student Safety QR</title>
 
 <style>
+
 body {
   font-family: Arial, sans-serif;
   background: #eef5ff;
@@ -22,19 +24,20 @@ body {
   box-shadow: 0 5px 20px #999;
 }
 
-h1, h2 {
+h1 {
+  text-align: center;
   color: #1565c0;
 }
 
-h1 {
-  text-align: center;
+h2 {
+  color: #1565c0;
 }
 
-.info, .location {
+.info {
   background: #f3f6fa;
   padding: 15px;
   border-radius: 12px;
-  margin-top: 15px;
+  margin-bottom: 15px;
 }
 
 button {
@@ -44,6 +47,7 @@ button {
   border: none;
   border-radius: 12px;
   font-size: 16px;
+  cursor: pointer;
 }
 
 .student {
@@ -67,4 +71,364 @@ button {
 }
 
 .hospital {
-  background: #
+  background: #d9f5dc;
+}
+
+.police {
+  background: #ffe4b5;
+}
+
+.location {
+  background: #eeeeee;
+  padding: 15px;
+  border-radius: 12px;
+  margin-top: 15px;
+  text-align: center;
+}
+
+.status {
+  font-weight: bold;
+}
+
+.hidden {
+  display: none;
+}
+
+.small {
+  font-size: 12px;
+  color: #666;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="card">
+
+<h1>🛡️ Smart Student Safety QR</h1>
+
+<div class="info">
+
+<p><b>👤 Student:</b> Student Name</p>
+
+<p><b>🎓 Class:</b> 7</p>
+
+<p><b>🏫 School:</b> School Name</p>
+
+<p><b>🟢 Card Status:</b> Active</p>
+
+</div>
+
+<button class="student" onclick="showStudentMode()">
+👨‍🎓 Student Mode
+</button>
+
+<button class="parent" onclick="showParentMode()">
+👨‍👩‍👦 Parent / Teacher Mode
+</button>
+
+<div id="studentMode" class="hidden">
+
+<h2>👨‍🎓 Student Mode</h2>
+
+<p>
+The student can share their current location
+with the safety system.
+</p>
+
+<button class="start" onclick="startSharing()">
+📍 Start Location Sharing
+</button>
+
+<button class="stop" onclick="stopSharing()">
+🔴 Stop Location Sharing
+</button>
+
+<div id="studentStatus" class="location">
+Location sharing is OFF.
+</div>
+
+</div>
+
+<div id="parentMode" class="hidden">
+
+<h2>👨‍👩‍👦 Parent / Teacher Mode</h2>
+
+<p>
+This is the page that opens after scanning
+the student's QR code.
+</p>
+
+<div class="location">
+
+<p class="status">
+Location Status:
+</p>
+
+<div id="parentLocation">
+No location has been shared yet.
+</div>
+
+</div>
+
+<button class="hospital" onclick="findHospital()">
+🏥 Find Nearby Hospital
+</button>
+
+<button class="police" onclick="findPolice()">
+👮 Find Nearby Police Station
+</button>
+
+</div>
+
+<p class="small">
+🔒 Privacy: Location sharing requires permission.
+This school-project prototype does not secretly
+track the student.
+</p>
+
+</div>
+
+<script>
+
+let watchID = null;
+
+function showStudentMode() {
+
+  document.getElementById("studentMode")
+  .classList.remove("hidden");
+
+  document.getElementById("parentMode")
+  .classList.add("hidden");
+
+}
+
+function showParentMode() {
+
+  document.getElementById("parentMode")
+  .classList.remove("hidden");
+
+  document.getElementById("studentMode")
+  .classList.add("hidden");
+
+  showParentLocation();
+
+}
+
+function startSharing() {
+
+  let status =
+    document.getElementById("studentStatus");
+
+  if (!navigator.geolocation) {
+
+    status.innerHTML =
+      "❌ Location is not supported by this browser.";
+
+    return;
+
+  }
+
+  status.innerHTML =
+    "📍 Asking for location permission...";
+
+  watchID = navigator.geolocation.watchPosition(
+
+    function(position) {
+
+      let latitude =
+        position.coords.latitude;
+
+      let longitude =
+        position.coords.longitude;
+
+      localStorage.setItem(
+        "studentLatitude",
+        latitude
+      );
+
+      localStorage.setItem(
+        "studentLongitude",
+        longitude
+      );
+
+      localStorage.setItem(
+        "sharing",
+        "true"
+      );
+
+      localStorage.setItem(
+        "lastUpdate",
+        new Date().toLocaleString()
+      );
+
+      status.innerHTML =
+        "🟢 Location sharing is ACTIVE.<br><br>" +
+        "Location updated successfully.";
+
+    },
+
+    function(error) {
+
+      status.innerHTML =
+        "❌ Location permission was denied " +
+        "or location is unavailable.";
+
+    },
+
+    {
+      enableHighAccuracy: true,
+      timeout: 10000,
+      maximumAge: 0
+    }
+
+  );
+
+}
+
+function stopSharing() {
+
+  if (watchID !== null) {
+
+    navigator.geolocation.clearWatch(
+      watchID
+    );
+
+    watchID = null;
+
+  }
+
+  localStorage.setItem(
+    "sharing",
+    "false"
+  );
+
+  document.getElementById(
+    "studentStatus"
+  ).innerHTML =
+    "🔴 Location sharing is OFF.";
+
+}
+
+function showParentLocation() {
+
+  let sharing =
+    localStorage.getItem("sharing");
+
+  let latitude =
+    localStorage.getItem("studentLatitude");
+
+  let longitude =
+    localStorage.getItem("studentLongitude");
+
+  let lastUpdate =
+    localStorage.getItem("lastUpdate");
+
+  let box =
+    document.getElementById("parentLocation");
+
+  if (
+    sharing !== "true" ||
+    latitude === null ||
+    longitude === null
+  ) {
+
+    box.innerHTML =
+      "🔴 Student is not currently sharing location.";
+
+    return;
+
+  }
+
+  box.innerHTML =
+    "🟢 <b>Location Available</b><br><br>" +
+    "📍 Latest location received<br>" +
+    "🕒 Last update: " +
+    lastUpdate +
+    "<br><br>" +
+    "<a target='_blank' href='" +
+    "https://www.google.com/maps?q=" +
+    latitude + "," + longitude +
+    "'>" +
+    "🗺️ Open Student Location in Google Maps" +
+    "</a>";
+
+}
+
+function findHospital() {
+
+  let latitude =
+    localStorage.getItem("studentLatitude");
+
+  let longitude =
+    localStorage.getItem("studentLongitude");
+
+  if (
+    latitude === null ||
+    longitude === null
+  ) {
+
+    alert(
+      "No student location is available."
+    );
+
+    return;
+
+  }
+
+  let url =
+    "https://www.google.com/maps/search/" +
+    "hospital/@" +
+    latitude + "," +
+    longitude +
+    ",15z";
+
+  window.open(
+    url,
+    "_blank"
+  );
+
+}
+
+function findPolice() {
+
+  let latitude =
+    localStorage.getItem("studentLatitude");
+
+  let longitude =
+    localStorage.getItem("studentLongitude");
+
+  if (
+    latitude === null ||
+    longitude === null
+  ) {
+
+    alert(
+      "No student location is available."
+    );
+
+    return;
+
+  }
+
+  let url =
+    "https://www.google.com/maps/search/" +
+    "police+station/@" +
+    latitude + "," +
+    longitude +
+    ",15z";
+
+  window.open(
+    url,
+    "_blank"
+  );
+
+}
+
+</script>
+
+</body>
+</html>
+
